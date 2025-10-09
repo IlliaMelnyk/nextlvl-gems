@@ -1,78 +1,111 @@
+<script setup lang="ts">
+import { ref, computed, onMounted, watch } from "vue";
+import { useRoute } from "vue-router";
+import GemCard from "../../components/GemCard.vue";
+import type { Gem } from "../../models/Gem.ts"; // Import z upraveného modelu
+import { fetchGems, fetchGemById } from "../../gem.ts"; // Předpokládám, že máš nějaký service soubor
+
+const route = useRoute();
+const gem = ref<Gem | null>(null);
+const relatedGems = ref<Gem[]>([]);
+
+const loadGem = async (id: string) => {
+  try {
+    const data = await fetchGemById(id);
+    if (!data) throw new Error("Gem not found!");
+    gem.value = data;
+
+    const all = await fetchGems();
+    // Zobrazí až 3 podobné produkty
+    relatedGems.value = all.filter((g) => g.id !== id).slice(0, 3);
+  } catch (err) {
+    console.error("Error fetching gem:", err);
+  }
+};
+
+// První načtení dat při zobrazení komponenty
+onMounted(() => {
+  if (route.params.id) {
+    loadGem(route.params.id as string);
+  }
+});
+
+// Reakce na změnu ID v URL (když uživatel klikne na podobný produkt)
+watch(
+    () => route.params.id,
+    (newId) => {
+      if (newId) {
+        loadGem(newId as string);
+        window.scrollTo(0, 0); // Posune stránku nahoru
+      }
+    }
+);
+
+// Bezpečnostní computed property, aby stránka nespadla, když se data ještě načítají
+const safeGem = computed<Gem>(() => gem.value || {
+  id: "",
+  name: "Načítání...",
+  description: "",
+  image: "",
+  price: 0,
+  isNew: false,
+});
+</script>
+
 <template>
   <div class="bg-gray-100 text-black min-h-screen">
-    <section class="max-w-6xl mx-auto px-6 pt-5 pb-3">
+    <section class="max-w-6xl mx-auto px-6 pt-5 pb-12">
       <router-link
           to="/products"
-          class="flex items-center text-emerald-600 hover:text-emerald-800  w-fit"
+          class="flex items-center text-emerald-600 hover:text-emerald-800 w-fit mb-4"
       >
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            class="w-5 h-5 mr-2"
-        >
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M15 19l-7-7 7-7"/>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-5 h-5 mr-2">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
         </svg>
         Back to Products
       </router-link>
 
-      <!-- Název -->
       <h1 class="text-3xl font-bold text-center mb-8">
-        {{ gem.name }} {{ gem.carat ? gem.carat + " ct" : "" }}
+        {{ safeGem.name }}
       </h1>
 
-      <div class="grid md:grid-cols-5 gap-7">
-        <!-- Galerie -->
-        <div class="flex flex-col gap-2">
+      <div class="grid md:grid-cols-5 gap-8">
+        <div class="md:col-span-2 flex justify-center items-start">
           <img
-              v-for="(img, i) in gem.images"
-              :key="i"
-              :src="img"
-              :alt="gem.name"
-              class="w-20 h-20 object-cover rounded cursor-pointer border hover:ring-2 hover:ring-emerald-500"
-              @click="selectedImage = img"
+              v-if="safeGem.image"
+              :src="safeGem.image"
+              :alt="safeGem.name"
+              class="w-full max-w-md h-auto rounded-lg shadow-lg object-cover"
           />
+          <div v-else class="w-full max-w-md h-80 bg-gray-200 rounded-lg shadow-lg animate-pulse"></div>
         </div>
 
-        <!-- Hlavní obrázek -->
-        <div class="flex justify-center items-center md:col-span-2">
-          <img
-              :src="selectedImage"
-              :alt="gem.name"
-              class="w-full max-w-md h-68 rounded shadow"
-          />
-        </div>
-
-        <!-- Info -->
-        <div class="md:col-span-2 space-y-4">
-          <p v-if="gem.price" class="text-xl font-semibold">
-            €{{ gem.price.toFixed(2) }}
+        <div class="md:col-span-3 space-y-4">
+          <p v-if="safeGem.price" class="text-2xl font-semibold">
+            €{{ safeGem.price.toLocaleString('de-DE') }}
           </p>
           <p class="text-gray-600">
             Tax included. <span class="underline cursor-pointer">Shipping not included</span>
           </p>
 
-          <div class="text-sm leading-relaxed">
-            <p>{{ gem.description }}</p>
-            <ul class="mt-4 space-y-1">
-              <li v-if="gem.carat"><b>Carat Weight:</b> {{ gem.carat }} ct</li>
-              <li v-if="gem.color"><b>Color:</b> {{ gem.color }}</li>
-              <li v-if="gem.cut"><b>Cut:</b> {{ gem.cut }}</li>
-              <li v-if="gem.origin"><b>Origin:</b> {{ gem.origin }}</li>
-              <li v-if="gem.treatment"><b>Treatment:</b> {{ gem.treatment }}</li>
-              <li v-if="gem.clarity"><b>Clarity:</b> {{ gem.clarity }}</li>
-              <li v-if="gem.measurements"><b>Measurements:</b> {{ gem.measurements }}</li>
+          <div class="text-base leading-relaxed pt-4 border-t">
+            <p class="mb-4">{{ safeGem.description }}</p>
+            <ul class="space-y-2 text-gray-700">
+              <li v-if="safeGem.status"><b>Status:</b> {{ safeGem.status }}</li>
+              <li v-if="safeGem.origin"><b>Origin:</b> {{ safeGem.origin }}</li>
+              <li v-if="safeGem.weight"><b>Weight:</b> {{ safeGem.weight }}</li>
+              <li v-if="safeGem.dimensions"><b>Dimensions:</b> {{ safeGem.dimensions }}</li>
+              <li v-if="safeGem.treatment"><b>Treatment:</b> {{ safeGem.treatment }}</li>
+              <li v-if="safeGem.clarity"><b>Clarity:</b> {{ safeGem.clarity }}</li>
+              <li v-if="safeGem.cut"><b>Cut:</b> {{ safeGem.cut }}</li>
             </ul>
           </div>
         </div>
       </div>
 
-      <!-- Related products -->
-      <div class="mt-16">
-        <h2 class="text-2xl font-bold text-center mb-6">Related Products</h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+      <div v-if="relatedGems.length > 0" class="mt-20">
+        <h2 class="text-2xl font-bold text-center mb-8">Related Products</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           <GemCard
               v-for="related in relatedGems"
               :key="related.id"
@@ -83,62 +116,3 @@
     </section>
   </div>
 </template>
-
-<script setup lang="ts">
-import { ref, computed } from "vue";
-import { useRoute } from "vue-router";
-import Navbar from "../../components/Navbar.vue";
-import GemCard from "../../components/GemCard.vue";
-import type { Gem } from "../../models/gem";
-
-// Simulovaná databáze (mock)
-const allGems: Gem[] = [
-  {
-    id: "1",
-    name: "Sapphire",
-    description: "A fantastic unheated pink sapphire from Madagascar.",
-    carat: 0.51,
-    price: 450,
-    images: ["/saphire-1.png", "/saphire-2.png", "/saphire-3.png"],
-    color: "Pink",
-    origin: "Madagascar",
-    clarity: "Eyeclean",
-    cut: "Trillion",
-    treatment: "None",
-    measurements: "5.2 x 5.2 x 3.0 mm",
-  },
-  {
-    id: "2",
-    name: "Ruby",
-    description: "Red ruby",
-    carat: 0.51,
-    images: ["/ruby-1.png"],
-    price: 1200,
-  },
-  {
-    id: "3",
-    name: "Amethyst",
-    description: "Purple amethyst",
-    carat: 0.51,
-    images: ["/emerald-1.png"],
-    price: 400,
-  },
-];
-
-// vezmeme ID z route
-const route = useRoute();
-const gemId = route.params.id as string;
-
-// hlavní gem
-const gem = allGems.find((g) => g.id === gemId) as Gem;
-
-// fallback, kdyby ID nebylo nalezeno
-if (!gem) {
-  throw new Error("Gem not found!");
-}
-
-const selectedImage = ref(gem.images[0]);
-
-// related produkty – všechny kromě aktuálního
-const relatedGems = computed(() => allGems.filter((g) => g.id !== gemId));
-</script>

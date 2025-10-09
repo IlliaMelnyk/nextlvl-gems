@@ -1,11 +1,15 @@
 export interface Gem {
-    id: string;
+    id?: string;
     name: string;
+    status?: string;
     description: string;
-    price?: number;
-    images: string[];
-    isNew?: boolean;
-    carat?: number;
-    color?: string;
     origin?: string;
+    weight?: string;
+    dimensions?: string;
+    treatment?: string;
+    clarity?: string;
+    cut?: string;
+    price: number;
+    image: string;
+    isNew: boolean;
 }

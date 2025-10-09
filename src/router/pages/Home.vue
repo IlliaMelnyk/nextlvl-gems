@@ -10,14 +10,14 @@
       </div> <!-- content -->
       <div class="relative z-10 max-w-5xl mx-2 px-6 pt-12 pb-20 flex flex-col items-start text-left">
         <h1 class="text-4xl md:text-6xl font-extrabold leading-tight"> Transparency<br/>is the key</h1>
-        <router-link to="/products" class="mt-8 inline-block px-6 py-3 rounded-full font-semibold shadow-green-600 bg-emerald-700 text-black hover:bg-amber-500 transition" > View products </router-link>
+        <router-link to="/products" class="mt-4 inline-block px-6 py-3 rounded-full font-semibold shadow-green-600 bg-emerald-700 text-black hover:bg-amber-500 transition" > View products </router-link>
       </div>
       <div class="relative z-10 max-w-5xl mx-auto px-6 pb-20 text-center text-sm text-gray-300">
       </div>
     </section>
 
     <!-- New Gems -->
-    <section id="new-gems" class="bg-gray-100 text-black pt-10">
+    <section id="new-gems" class="scroll-mt-10 bg-gray-100 text-black pt-10">
       <div class="max-w-6xl mx-auto px-6">
         <h2 class="text-3xl font-bold mb-8 text-center ">New Gems</h2>
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
@@ -27,7 +27,7 @@
     </section>
 
     <!-- About -->
-    <section id="about" class="bg-gray-100 text-black pt-4">
+    <section id="about" class="scroll-mt-12 bg-gray-100 text-black pt-4">
       <div class="max-w-6xl mx-auto px-6 grid md:grid-cols-2 gap-12 items-center">
         <div>
           <h2 class="text-4xl font-bold mb-6 ">About us</h2>
@@ -43,14 +43,18 @@
     </section>
 
     <!-- Contact -->
-    <section id="contact" class="bg-gray-100 text-black">
+    <section id="contact" class="scroll-mt-24 bg-gray-100 text-black">
       <div class="max-w-6xl mx-auto px-6">
         <h2 class="text-4xl font-bold text-center mb-12">Contact Us</h2>
-        <div class="grid md:grid-cols-2 gap-12">
-          <form class="space-y-6">
-            <input type="text" placeholder="Your Name" class="w-full border rounded-lg px-4 py-2" />
-            <input type="email" placeholder="you@example.com" class="w-full border rounded-lg px-4 py-2" />
-            <textarea rows="5" placeholder="Write your message..." class="w-full border rounded-lg px-4 py-2"></textarea>
+        <div class="grid md:grid-cols-2 gap-10">
+          <form
+              action="https://formspree.io/f/xnngdrkg"
+              method="POST"
+              class="space-y-6"
+          >
+            <input type="text" name="name" placeholder="Your Name" class="w-full border rounded-lg px-4 py-2" required />
+            <input type="email" name="email" placeholder="you@example.com" class="w-full border rounded-lg px-4 py-2" required />
+            <textarea name="message" rows="5" placeholder="Write your message..." class="w-full border rounded-lg px-4 py-2" required></textarea>
             <button type="submit" class="bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition">
               Send Message
             </button>
@@ -73,13 +77,19 @@
 import Navbar from "../../components/Navbar.vue";
 import GemCard from "../../components/GemCard.vue";
 import type { Gem } from "../../models/Gem";
+import { fetchGems } from "../../gem.ts";
+import { ref, onMounted, computed } from "vue";
 
+const allGems = ref<Gem[]>([]);
+
+const newGems = computed(() => allGems.value.filter(g => g.isNew));
 const heroImage = "/emerald-hero.png";
-
-const allGems: Gem[] = [
-  { id: "1", name: "Emerald Radiance", price: 1200, images: ["/emerald-1.png"], isNew: true },
-  { id: "2", name: "Ruby Flame", price: 1500, images: ["/ruby-1.png"], isNew: true },
-  { id: "3", name: "Sapphire Sky", price: 980, images: ["/saphire-1.png"], isNew: true },
-];
-const newGems = allGems.filter(g => g.isNew);
+onMounted(async () => {
+  try {
+    const data = await fetchGems();
+    allGems.value = data;
+  } catch (err) {
+    console.error("Error fetching gems:", err);
+  }
+});
 </script>

@@ -49,44 +49,28 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
-import Navbar from "../../components/Navbar.vue";
+import { ref, computed, onMounted } from "vue";
 import GemCard from "../../components/GemCard.vue";
 import type { Gem } from "../../models/Gem";
+import { fetchGems } from "../../gem.ts"; // import tvé fetch funkce
 
-// Mock data – můžeš později napojit na backend
-const gems = ref<Gem[]>([
-  {
-    id: "1",
-    name: "Sapphire",
-    description: "Blue sapphire",
-    carat: 0.51,
-    images: ["/saphire-1.png"],
-    price: 800,
-  },
-  {
-    id: "2",
-    name: "Ruby",
-    description: "Red ruby",
-    carat: 0.51,
-    images: ["/ruby-1.png"],
-    price: 1200,
-  },
-  {
-    id: "3",
-    name: "Amethyst",
-    description: "Purple amethyst",
-    carat: 0.51,
-    images: ["/emerald-1.png"],
-    price: 400,
-  },
-]);
-
+const gems = ref<Gem[]>([]);
 const searchQuery = ref("");
 const sortOption = ref("name");
 
+// načtení dat z Firebase při mountu
+onMounted(async () => {
+  try {
+    const data = await fetchGems();
+    gems.value = data;
+  } catch (err) {
+    console.error("Error fetching gems:", err);
+  }
+});
+
+// filtrovaný a seřazený seznam
 const filteredGems = computed(() => {
-  let list = gems.value.filter((gem) =>
+  let list = gems.value.filter(gem =>
       gem.name.toLowerCase().includes(searchQuery.value.toLowerCase())
   );
 

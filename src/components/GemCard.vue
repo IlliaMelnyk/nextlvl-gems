@@ -4,11 +4,7 @@
   >
     <!-- Obrázek -->
     <div class="h-52 bg-gray-100">
-      <img
-          :src="gem.images[0]"
-          :alt="gem.name"
-          class="w-full h-full object-cover"
-      />
+      <img :src="gem.image || '/placeholder.png'" :alt="gem.name" class="w-full h-full object-cover" />
     </div>
 
     <!-- Obsah -->

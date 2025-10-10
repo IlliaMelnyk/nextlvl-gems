@@ -17,7 +17,6 @@ export const useGemStore = defineStore("gems", () => {
         selectedGem,
         isLoading,
         error,
-        fetchGems,
         getGemById,
     };
 });

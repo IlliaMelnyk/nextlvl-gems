@@ -1,9 +1,8 @@
 import { createRouter, createWebHistory } from "vue-router";
 import Home from "./pages/Home.vue";
 import AllProducts from "./pages/AllProducts.vue";
-import GemDetail from "./pages-old/GemDetail.vue";
+import GemDetail from "./pages/GemDetail.vue";
 import Admin from "./pages/Admin.vue";
-
 const routes = [
     { path: "/", name: "Home", component: Home },
     { path: "/products", name: "AllProducts", component: AllProducts },

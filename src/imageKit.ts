@@ -1,7 +1,6 @@
 import axios from "axios";
 
 const PUBLIC_KEY = import.meta.env.VITE_IMAGEKIT_PUBLIC_KEY
-console.log("Loaded ImageKit Public Key:", PUBLIC_KEY);
 const UPLOAD_URL = "https://upload.imagekit.io/api/v1/files/upload";
 const URL_ENDPOINT = import.meta.env.VITE_IMAGEKIT_URL_ENDPOINT
 

@@ -31,15 +31,27 @@
         <input v-model.number="newGem.price" placeholder="Price" type="number" class="border p-2 w-full" required />
 
         <div>
-          <p class="font-medium">Upload Image:</p>
+          <p class="font-medium mb-2">Upload Images:</p>
           <IKContext
               :publicKey="publicKey"
               :urlEndpoint="urlEndpoint"
               :authenticator="authenticator"
           >
-            <IKUpload @success="onUploadSuccess" @error="onUploadError" />
+            <IKUpload
+                :multiple="true"
+                @success="onUploadSuccess"
+                @error="onUploadError"
+            />
           </IKContext>
-          <p v-if="newGem.image" class="text-green-600 mt-2">✅ Image uploaded!</p>
+
+          <div class="flex flex-wrap gap-3 mt-3">
+            <img
+                v-for="(img, idx) in newGem.images"
+                :key="idx"
+                :src="img"
+                class="w-24 h-24 object-cover rounded border"
+            />
+          </div>
         </div>
 
         <div class="flex gap-2">
@@ -124,18 +136,23 @@ const getInitialGemState = (): Gem => ({
   cut: "",
   price: 0,
   image: "",
+  images: [], // přidáno
   isNew: false,
 });
-
 const newGem = ref<Gem>(getInitialGemState());
 
 const onUploadSuccess = (response: any) => {
-  newGem.value.image = response.url;
+  console.log("✅ Upload success:", response);
+  newGem.value.images.push(response.url);
+
+  if (!newGem.value.image) {
+    newGem.value.image = response.url;
+  }
 };
 
 const onUploadError = (error: any) => {
-  console.error("Upload failed:", error);
-  alert('Image upload failed. Please check the console.');
+  console.error("❌ Upload failed:", error);
+  alert("Image upload failed. Check console for details.");
 };
 
 onAuthStateChanged(auth, (u) => {
@@ -157,8 +174,8 @@ const fetchGems = async () => {
 };
 
 const saveGem = async () => {
-  if (!newGem.value.name || !newGem.value.price || !newGem.value.image) {
-    alert("Name, price and image are required.");
+  if (!newGem.value.name || !newGem.value.price || newGem.value.images.length === 0) {
+    alert("Name, price and at least one image are required.");
     return;
   }
   const gemData = { ...newGem.value };

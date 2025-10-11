@@ -11,5 +11,6 @@ export interface Gem {
     cut?: string;
     price: number;
     image: string;
+    images: string[];
     isNew: boolean;
 }

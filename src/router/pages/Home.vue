@@ -48,7 +48,7 @@
         <h2 class="text-4xl font-bold text-center mb-12">Contact Us</h2>
         <div class="grid md:grid-cols-2 gap-10">
           <form
-              action="https://formspree.io/f/xnngdrkg"
+              action="https://formspree.io/f/xldpawoy"
               method="POST"
               class="space-y-6"
           >
@@ -62,8 +62,8 @@
           <div class="space-y-6">
             <p class="text-lg">Have any questions? Reach out to us and we’ll get back to you as soon as possible.</p>
             <div>
-              <p><strong>Email:</strong> info@nextlevelgems.com</p>
-              <p><strong>Phone:</strong> +420 123 456 789</p>
+              <p><strong>Email:</strong> gadasp@gmail.com</p>
+              <p><strong>Phone:</strong> +420 736 164 634</p>
               <p><strong>Instagram:</strong> @nextlevel_gems</p>
             </div>
           </div>

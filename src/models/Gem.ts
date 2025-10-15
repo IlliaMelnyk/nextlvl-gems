@@ -13,4 +13,6 @@ export interface Gem {
     image: string;
     images: string[];
     isNew: boolean;
+    category: string;
+    subcategory: string;
 }

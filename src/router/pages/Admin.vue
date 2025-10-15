@@ -19,6 +19,27 @@
       <form @submit.prevent="saveGem" class="space-y-4 bg-slate-50 p-4 rounded-lg">
         <h2 class="text-xl font-semibold">{{ editingId ? "Edit Gem" : "Add New Gem" }}</h2>
 
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Category</label>
+            <select v-model="newGem.category" class="mt-1 block w-full border p-2 rounded-md" required>
+              <option disabled value="">Please select one</option>
+              <option v-for="cat in Object.keys(categories)" :key="cat" :value="cat">
+                {{ cat }}
+              </option>
+            </select>
+          </div>
+          <div v-if="newGem.category">
+            <label class="block text-sm font-medium text-gray-700">Subcategory</label>
+            <select v-model="newGem.subcategory" class="mt-1 block w-full border p-2 rounded-md" required>
+              <option disabled value="">Please select one</option>
+              <option v-for="subcat in categories[newGem.category]" :key="subcat" :value="subcat">
+                {{ subcat }}
+              </option>
+            </select>
+          </div>
+        </div>
+
         <input v-model="newGem.name" placeholder="Name (e.g., Tsavorite 2,98ct)" class="border p-2 w-full" required />
         <input v-model="newGem.status" placeholder="Status (e.g., Available)" class="border p-2 w-full" />
         <textarea v-model="newGem.description" placeholder="Description" class="border p-2 w-full h-24" required></textarea>
@@ -90,7 +111,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import {ref, watch} from "vue";
 import { IKContext, IKUpload } from "imagekitio-vue";
 import { db, auth, login, logout } from "../../firebase";
 import {
@@ -108,6 +129,17 @@ import type { Gem } from "../../models/Gem.ts";
 const publicKey = import.meta.env.VITE_IMAGEKIT_PUBLIC_KEY;
 const urlEndpoint = import.meta.env.VITE_IMAGEKIT_URL_ENDPOINT;
 
+const categories: Record<string, string[]> = {
+  Faceted: [
+    "Beryl", "Garnet", "Chrysoberyl", "Kornerupine", "Quartz",
+    "Ruby", "Sapphire", "Spinel", "Tanzanite", "Topaz", "Tourmaline"
+  ],
+  Rough: [
+    "Beryl", "Garnet", "Chrysoberyl", "Kornerupine", "Quartz",
+    "Ruby", "Sapphire", "Spinel", "Tanzanite", "Topaz", "Tourmaline"
+  ]
+};
+
 const authenticator = async () => {
   try {
     const response = await fetch("https://imagekitauth-vinocveq4q-uc.a.run.app");
@@ -119,7 +151,7 @@ const authenticator = async () => {
   }
 };
 
-const ADMIN_EMAILS = ["illimelnik2706@gmail.com"];
+const ADMIN_EMAILS = ["illimelnik2706@gmail.com","gadasp@gmail.com"];
 const user = ref<User | null>(null);
 const gems = ref<Gem[]>([]);
 const editingId = ref<string | null>(null);
@@ -138,8 +170,14 @@ const getInitialGemState = (): Gem => ({
   image: "",
   images: [], // přidáno
   isNew: false,
+  category: "",
+  subcategory: "",
 });
 const newGem = ref<Gem>(getInitialGemState());
+
+watch(() => newGem.value.category, () => {
+  newGem.value.subcategory = "";
+});
 
 const onUploadSuccess = (response: any) => {
   console.log("✅ Upload success:", response);

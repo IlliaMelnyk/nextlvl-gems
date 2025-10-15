@@ -5,7 +5,7 @@ import GemDetail from "./pages/GemDetail.vue";
 import Admin from "./pages/Admin.vue";
 const routes = [
     { path: "/", name: "Home", component: Home },
-    { path: "/products", name: "AllProducts", component: AllProducts },
+    { path: "/products/:category?/:subcategory?", name: "AllProducts", component: AllProducts },
     { path: "/product/:id", name: "GemDetail", component: GemDetail, props: true },
     { path: "/admin", name: "Admin", component: Admin }
 ];

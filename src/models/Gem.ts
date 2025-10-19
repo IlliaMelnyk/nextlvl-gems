@@ -12,6 +12,7 @@ export interface Gem {
     price: number;
     image: string;
     images: string[];
+    videos: string[];
     isNew: boolean;
     category: string;
     subcategory: string;

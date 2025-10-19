@@ -27,31 +27,42 @@
       </h1>
 
       <div class="grid md:grid-cols-5 gap-8">
-        <!-- Obrázky / Carousel -->
         <div class="md:col-span-2 flex flex-col items-center relative">
-          <!-- Hlavní obrázek -->
-          <div class="relative w-full max-w-md">
+          <div class="relative w-full max-w-md aspect-square bg-gray-200 rounded-lg shadow-lg">
+
+            <template v-if="activeMediaItem">
+              <img
+                  v-if="activeMediaItem.type === 'image'"
+                  :src="activeMediaItem.url"
+                  :alt="`${safeGem.name} image ${activeIndex + 1}`"
+                  class="w-full h-full rounded-lg object-cover transition-all duration-300"
+              />
+              <video
+                  v-else-if="activeMediaItem.type === 'video'"
+                  :src="activeMediaItem.url"
+                  :key="activeMediaItem.url"
+                  class="w-full h-full rounded-lg object-cover"
+                  controls
+                  autoplay
+                  muted
+                  loop
+                  playsinline
+              ></video>
+            </template>
             <img
-                v-if="hasImages"
-                :src="safeGem.images[activeIndex]"
-                :alt="`${safeGem.name} image ${activeIndex + 1}`"
-                class="w-full h-auto rounded-lg shadow-lg object-cover transition-all duration-300"
-            />
-            <img
-                v-else-if="safeGem.image"
+                v-else-if="!hasMedia && safeGem.image"
                 :src="safeGem.image"
                 :alt="safeGem.name"
-                class="w-full h-auto rounded-lg shadow-lg object-cover"
+                class="w-full h-full rounded-lg object-cover"
             />
             <div
-                v-else
-                class="w-full h-80 bg-gray-200 rounded-lg shadow-lg animate-pulse"
+                v-else-if="!hasMedia"
+                class="w-full h-full rounded-lg shadow-lg animate-pulse"
             ></div>
 
-            <!-- Navigační šipky -->
             <button
-                v-if="hasImages"
-                @click="prevImage"
+                v-if="hasMedia && allMedia.length > 1"
+                @click="prevMedia"
                 class="absolute left-2 top-1/2 -translate-y-1/2 bg-white/70 hover:bg-white rounded-full p-2 shadow"
             >
               <svg
@@ -71,8 +82,8 @@
             </button>
 
             <button
-                v-if="hasImages"
-                @click="nextImage"
+                v-if="hasMedia && allMedia.length > 1"
+                @click="nextMedia"
                 class="absolute right-2 top-1/2 -translate-y-1/2 bg-white/70 hover:bg-white rounded-full p-2 shadow"
             >
               <svg
@@ -92,33 +103,36 @@
             </button>
           </div>
 
-          <!-- Mini náhledy -->
           <div
-              v-if="hasImages"
+              v-if="hasMedia && allMedia.length > 1"
               class="flex gap-2 mt-4 flex-wrap justify-center"
           >
-            <img
-                v-for="(img, idx) in safeGem.images"
-                :key="idx"
-                :src="img"
-                :alt="`${safeGem.name} thumb ${idx + 1}`"
-                class="w-16 h-16 object-cover rounded-lg cursor-pointer border transition-all duration-200"
-                :class="idx === activeIndex ? 'border-2 border-emerald-600' : 'border-transparent opacity-80 hover:opacity-100'"
+            <div
+                v-for="(media, idx) in allMedia"
+                :key="media.url"
+                class="w-16 h-16 rounded-lg cursor-pointer border-2 bg-gray-200"
+                :class="idx === activeIndex ? 'border-emerald-600' : 'border-transparent opacity-80 hover:opacity-100'"
                 @click="activeIndex = idx"
-            />
+            >
+              <img
+                  v-if="media.type === 'image'"
+                  :src="media.url"
+                  :alt="`${safeGem.name} thumb ${idx + 1}`"
+                  class="w-full h-full object-cover rounded"
+              />
+              <video
+                  v-else-if="media.type === 'video'"
+                  :src="media.url"
+                  :alt="`${safeGem.name} thumb ${idx + 1}`"
+                  class="w-full h-full object-cover rounded"
+                  muted
+                  playsinline
+              ></video>
+            </div>
           </div>
         </div>
 
-        <!-- Detaily kamene -->
         <div class="md:col-span-3 space-y-4">
-          <p v-if="safeGem.price" class="text-2xl font-semibold">
-            €{{ safeGem.price.toLocaleString('de-DE') }}
-          </p>
-          <p class="text-gray-600">
-            Tax included.
-            <span class="underline cursor-pointer">Shipping not included</span>
-          </p>
-
           <div class="text-base leading-relaxed pt-4 border-t">
             <p class="mb-4">{{ safeGem.description }}</p>
             <ul class="space-y-2 text-gray-700">
@@ -134,7 +148,6 @@
         </div>
       </div>
 
-      <!-- Related -->
       <div v-if="relatedGems.length > 0" class="mt-20">
         <h2 class="text-2xl font-bold text-center mb-8">Related Products</h2>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -156,20 +169,40 @@ const route = useRoute();
 const gem = ref<Gem | null>(null);
 const relatedGems = ref<Gem[]>([]);
 
-// Carousel stav
+// ----- NOVÁ LOGIKA KARUSELU -----
+
 const activeIndex = ref(0);
-const hasImages = computed(() => gem.value?.images && gem.value.images.length > 0);
 
-const nextImage = () => {
-  if (!hasImages.value) return;
-  activeIndex.value = (activeIndex.value + 1) % gem.value!.images.length;
+// Vytvoříme jedno pole pro všechna média (obrázky i videa)
+const allMedia = computed(() => {
+  const images = (safeGem.value.images || []).map(url => ({ type: 'image' as const, url }));
+  const videos = (safeGem.value.videos || []).map(url => ({ type: 'video' as const, url }));
+  return [...images, ...videos];
+});
+
+// Zjistíme, zda máme nějaká média
+const hasMedia = computed(() => allMedia.value.length > 0);
+
+// Aktivní médium, které se má zobrazit
+const activeMediaItem = computed(() => {
+  if (!hasMedia.value) return null;
+  return allMedia.value[activeIndex.value];
+});
+
+// Funkce pro listování (přejmenováno z Image na Media)
+const nextMedia = () => {
+  if (!hasMedia.value) return;
+  activeIndex.value = (activeIndex.value + 1) % allMedia.value.length;
 };
 
-const prevImage = () => {
-  if (!hasImages.value) return;
+const prevMedia = () => {
+  if (!hasMedia.value) return;
   activeIndex.value =
-      (activeIndex.value - 1 + gem.value!.images.length) % gem.value!.images.length;
+      (activeIndex.value - 1 + allMedia.value.length) % allMedia.value.length;
 };
+
+// ----- KONEC LOGIKY KARUSELU -----
+
 
 // Načtení dat
 const loadGem = async (id: string) => {
@@ -180,7 +213,7 @@ const loadGem = async (id: string) => {
 
     const all = await fetchGems();
     relatedGems.value = all.filter((g) => g.id !== id).slice(0, 3);
-    activeIndex.value = 0;
+    activeIndex.value = 0; // Reset karuselu
   } catch (err) {
     console.error("Error fetching gem:", err);
   }
@@ -202,19 +235,27 @@ watch(
     }
 );
 
+// Bezpečná verze 'gem' pro template, aby nepadal, než se data načtou
+// Důležité: Přidáno 'videos: []'
 const safeGem = computed<Gem>(() => gem.value || {
   id: "",
   name: "Načítání...",
   description: "",
   image: "",
   images: [],
+  videos: [], // <-- PŘIDÁNO ZDE
   price: 0,
   isNew: false,
 });
 </script>
 
 <style scoped>
-img {
+/* Přidání poměru stran pro hlavní media kontejner */
+.aspect-square {
+  aspect-ratio: 1 / 1;
+}
+
+img, video {
   transition: opacity 0.3s ease;
 }
 </style>

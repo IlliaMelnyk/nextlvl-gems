@@ -4,15 +4,15 @@
 
     <section id="home" class="relative pt-[80px] min-h-[450px] overflow-hidden">
       <!-- Obrázek na pozadí -->
-      <div class="absolute inset-0 bg-cover bg-center scale-110" :style="`background-image: url('${heroImage}')`" aria-hidden="true" ></div>
+      <div class="absolute inset-0 bg-cover bg-center scale-100" :style="`background-image: url('${heroImage}')`" aria-hidden="true" ></div>
 
       <!-- Tmavý překryv pro lepší kontrast -->
-      <div class="absolute inset-0 bg-black/55"></div>
+      <div class="absolute inset-0 bg-black/30"></div>
 
       <!-- Obsah -->
       <div class="relative z-10 max-w-5xl mx-2 px-6 pt-24 pb-16 flex flex-col items-start text-left">
         <h1 class="text-4xl md:text-6xl font-extrabold leading-tight"> Transparency<br/>is the key</h1>
-        <router-link to="/products" class="mt-4 inline-block px-6 py-3 rounded-full font-semibold shadow-green-600 bg-emerald-700 text-black hover:bg-amber-500 transition" > View products </router-link>
+        <router-link to="/products" class="mt-4 inline-block px-6 py-3 rounded-full font-semibold shadow-green-500 bg-emerald-700 text-black hover:bg-amber-500 transition" > View products </router-link>
       </div>
 
     </section>
@@ -37,7 +37,7 @@
           </p>
         </div>
         <div class="flex justify-center">
-          <img src="/about-us.png" alt="About Nextlevel Gems" class="rounded-lg w-full max-w-md" />
+          <img src="/about.png" alt="About Nextlevel Gems" class="rounded-lg w-full max-w-md" />
         </div>
       </div>
     </section>
@@ -84,7 +84,7 @@ const allGems = ref<Gem[]>([]);
 
 // ZDE JE ZMĚNA: Zobrazí se pouze první 3 nové drahokamy
 const newGems = computed(() => allGems.value.filter(g => g.isNew).slice(0, 3));
-const heroImage = "/emerald-hero.png";
+const heroImage = "/emerald-hero2.jpg";
 onMounted(async () => {
   try {
     const data = await fetchGems();

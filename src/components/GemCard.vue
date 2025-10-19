@@ -13,7 +13,7 @@
       <p class="text-sm text-gray-500 line-clamp-2">{{ gem.description }}</p>
 
       <div class="mt-3 flex items-center justify-between">
-        <span v-if="gem.price" class="text-emerald-700 font-bold">{{ gem.price }} €</span>
+<!--        <span v-if="gem.price" class="text-emerald-700 font-bold">{{ gem.price }} €</span>-->
         <router-link
             :to="`/product/${gem.id}`"
             class="text-sm px-3 py-1 rounded-full bg-emerald-600 text-white hover:bg-amber-500 transition"

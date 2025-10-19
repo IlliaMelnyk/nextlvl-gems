@@ -49,35 +49,60 @@
         <input v-model="newGem.treatment" placeholder="Treatment (e.g., None)" class="border p-2 w-full" />
         <input v-model="newGem.clarity" placeholder="Clarity (e.g., Loupe-clean)" class="border p-2 w-full" />
         <input v-model="newGem.cut" placeholder="Cut (e.g., Heart)" class="border p-2 w-full" />
-        <input v-model.number="newGem.price" placeholder="Price" type="number" class="border p-2 w-full" required />
-
         <div>
           <p class="font-medium mb-2">Upload Images:</p>
-          <IKContext
-              :publicKey="publicKey"
-              :urlEndpoint="urlEndpoint"
-              :authenticator="authenticator"
-          >
+          <IKContext :publicKey="publicKey" :urlEndpoint="urlEndpoint" :authenticator="authenticator">
             <IKUpload
                 :multiple="true"
                 @success="onUploadSuccess"
                 @error="onUploadError"
+                :validateFile="validateImageFile" :onUploadStart="onUploadStart"
             />
           </IKContext>
 
-          <div class="flex flex-wrap gap-3 mt-3">
-            <img
-                v-for="(img, idx) in newGem.images"
-                :key="idx"
-                :src="img"
-                class="w-24 h-24 object-cover rounded border"
-            />
+          <div class="flex flex-wrap gap-4 mt-3">
+            <div v-for="(img, idx) in newGem.images" :key="idx" class="relative">
+              <img :src="img" class="w-24 h-24 object-cover rounded border" />
+              <button @click="removeImage(idx)" type="button" title="Remove image" class="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center font-bold text-sm leading-none">
+                &times;
+              </button>
+            </div>
           </div>
         </div>
 
+        <div>
+          <p class="font-medium mb-2">Upload Videos:</p>
+          <IKContext :publicKey="publicKey" :urlEndpoint="urlEndpoint" :authenticator="authenticator">
+            <IKUpload
+                :multiple="true"
+                @success="onVideoUploadSuccess"
+                @error="onUploadError"
+                :validateFile="validateVideoFile" :onUploadStart="onUploadStart"
+            />
+          </IKContext>
+
+          <div class="flex flex-wrap gap-4 mt-3">
+            <div v-for="(videoUrl, idx) in newGem.videos" :key="idx" class="relative">
+              <video :src="videoUrl" class="w-24 h-24 object-cover rounded border" muted></video>
+              <button @click="removeVideo(idx)" type="button" title="Remove video" class="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center font-bold text-sm leading-none">
+                &times;
+              </button>
+            </div>
+          </div>
+        </div>
         <div class="flex gap-2">
-          <button type="submit" class="bg-emerald-600 text-white px-4 py-2 rounded">
-            {{ editingId ? "Update Gem" : "Add Gem" }}
+          <button
+              type="submit"
+              class="bg-emerald-600 text-white px-4 py-2 rounded"
+              :disabled="isUploading"
+              :class="{ 'opacity-50 cursor-not-allowed': isUploading }"
+          >
+            <span v-if="isUploading">
+              Nahrávám ({{ uploadInProgressCount }})...
+            </span>
+            <span v-else>
+              {{ editingId ? "Update Gem" : "Add Gem" }}
+            </span>
           </button>
           <button v-if="editingId" @click="cancelEdit" type="button" class="px-4 py-2 rounded border">
             Cancel
@@ -88,7 +113,7 @@
       <h2 class="text-xl font-semibold mt-8 mb-3">All Gems</h2>
       <ul>
         <li v-for="gem in gems" :key="gem.id" class="flex justify-between items-center p-2 border-b">
-          <span>{{ gem.name }} - ${{ gem.price }}</span>
+          <span>{{ gem.name }}</span>
           <div class="flex items-center gap-4">
             <label class="flex items-center gap-2 cursor-pointer">
               <input
@@ -111,7 +136,7 @@
 </template>
 
 <script setup lang="ts">
-import {ref, watch} from "vue";
+import { ref, watch, computed } from "vue";
 import { IKContext, IKUpload } from "imagekitio-vue";
 import { db, auth, login, logout } from "../../firebase";
 import {
@@ -123,7 +148,6 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { onAuthStateChanged, type User } from "firebase/auth";
-// ZMĚNA ZDE: Importujeme typ 'Gem' z externího souboru
 import type { Gem } from "../../models/Gem.ts";
 
 const publicKey = import.meta.env.VITE_IMAGEKIT_PUBLIC_KEY;
@@ -156,6 +180,10 @@ const user = ref<User | null>(null);
 const gems = ref<Gem[]>([]);
 const editingId = ref<string | null>(null);
 
+// Sledování probíhajících nahrávání
+const uploadInProgressCount = ref(0);
+const isUploading = computed(() => uploadInProgressCount.value > 0);
+
 const getInitialGemState = (): Gem => ({
   name: "",
   status: "Available",
@@ -168,7 +196,8 @@ const getInitialGemState = (): Gem => ({
   cut: "",
   price: 0,
   image: "",
-  images: [], // přidáno
+  images: [],
+  videos: [],
   isNew: false,
   category: "",
   subcategory: "",
@@ -179,18 +208,75 @@ watch(() => newGem.value.category, () => {
   newGem.value.subcategory = "";
 });
 
-const onUploadSuccess = (response: any) => {
-  console.log("✅ Upload success:", response);
-  newGem.value.images.push(response.url);
+// --- NOVÉ ROBUSTNÍ VALIDAČNÍ FUNKCE ---
+const validateImageFile = (file: File) => {
+  const isImageMime = file.type.startsWith('image/');
+  // Povolíme běžné typy obrázků
+  const isImageExt = ['.jpg', '.jpeg', '.png', '.gif', '.webp'].some(ext =>
+      file.name.toLowerCase().endsWith(ext)
+  );
+  // Pokud je Mime typ v pořádku NEBO přípona v pořádku, povol nahrání
+  return isImageMime || isImageExt;
+};
 
+const validateVideoFile = (file: File) => {
+  const isVideoMime = file.type.startsWith('video/');
+  // Povolíme běžné typy videí, včetně .mov
+  const isVideoExt = ['.mp4', '.mov', '.avi', '.webm', '.mkv', '.quicktime'].some(ext =>
+      file.name.toLowerCase().endsWith(ext)
+  );
+  // Pokud je Mime typ v pořádku NEBO přípona v pořádku, povol nahrání
+  return isVideoMime || isVideoExt;
+};
+// --- KONEC NOVÝCH FUNKCÍ ---
+
+
+const removeImage = (indexToRemove: number) => {
+  const removedUrl = newGem.value.images[indexToRemove];
+  newGem.value.images.splice(indexToRemove, 1);
+  if (newGem.value.image === removedUrl) {
+    newGem.value.image = newGem.value.images[0] || "";
+  }
+};
+
+const removeVideo = (indexToRemove: number) => {
+  if (newGem.value.videos) {
+    newGem.value.videos.splice(indexToRemove, 1);
+  }
+};
+
+const onUploadStart = () => {
+  uploadInProgressCount.value++;
+};
+
+const onUploadFinished = () => {
+  if (uploadInProgressCount.value > 0) {
+    uploadInProgressCount.value--;
+  }
+};
+
+const onUploadSuccess = (response: any) => {
+  console.log("✅ Image upload success:", response);
+  newGem.value.images.push(response.url);
   if (!newGem.value.image) {
     newGem.value.image = response.url;
   }
+  onUploadFinished();
+};
+
+const onVideoUploadSuccess = (response: any) => {
+  console.log("✅ Video upload success:", response);
+  if (!newGem.value.videos) {
+    newGem.value.videos = [];
+  }
+  newGem.value.videos.push(response.url);
+  onUploadFinished();
 };
 
 const onUploadError = (error: any) => {
   console.error("❌ Upload failed:", error);
-  alert("Image upload failed. Check console for details.");
+  alert("Upload failed. Check console for details.");
+  onUploadFinished();
 };
 
 onAuthStateChanged(auth, (u) => {
@@ -212,10 +298,11 @@ const fetchGems = async () => {
 };
 
 const saveGem = async () => {
-  if (!newGem.value.name || !newGem.value.price || newGem.value.images.length === 0) {
-    alert("Name, price and at least one image are required.");
+  if (!newGem.value.name || (newGem.value.images.length === 0 && newGem.value.videos.length === 0)) {
+    alert("Name and at least one image or video are required.");
     return;
   }
+
   const gemData = { ...newGem.value };
   delete gemData.id;
   if (editingId.value) {
@@ -235,7 +322,17 @@ const deleteGem = async (id?: string) => {
 
 const editGem = (gem: Gem) => {
   editingId.value = gem.id ?? null;
-  newGem.value = { ...gem };
+
+  const mergedGem = { ...getInitialGemState(), ...gem };
+
+  if (!Array.isArray(mergedGem.images)) {
+    mergedGem.images = [];
+  }
+  if (!Array.isArray(mergedGem.videos)) {
+    mergedGem.videos = [];
+  }
+
+  newGem.value = mergedGem;
 };
 
 const cancelEdit = () => {

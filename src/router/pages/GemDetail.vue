@@ -28,17 +28,32 @@
 
       <div class="grid md:grid-cols-5 gap-8">
         <div class="md:col-span-2 flex flex-col items-center relative">
-          <div class="relative w-full max-w-md aspect-square bg-gray-200 rounded-lg shadow-lg">
+
+          <div
+              class="relative w-full max-w-md bg-gray-200 rounded-lg shadow-lg aspect-square overflow-hidden"
+          >
 
             <template v-if="activeMediaItem">
               <img
                   v-if="activeMediaItem.type === 'image'"
+                  :key="activeMediaItem.url"
                   :src="activeMediaItem.url"
                   :alt="`${safeGem.name} image ${activeIndex + 1}`"
                   class="w-full h-full rounded-lg object-cover transition-all duration-300"
               />
+
+              <iframe
+                  v-else-if="activeMediaItem.type === 'vimeo' || activeMediaItem.type === 'youtube'"
+                  :key="activeMediaItem.embedUrl"
+                  :src="activeMediaItem.embedUrl"
+                  class="absolute top-0 left-1/2 -translate-x-1/2 h-full w-[177.77%]"
+                  frameborder="0"
+                  allow="autoplay; fullscreen; picture-in-picture"
+                  allowfullscreen
+              ></iframe>
+
               <video
-                  v-else-if="activeMediaItem.type === 'video'"
+                  v-else-if="activeMediaItem.type === 'file'"
                   :src="activeMediaItem.url"
                   :key="activeMediaItem.url"
                   class="w-full h-full rounded-lg object-cover"
@@ -49,6 +64,7 @@
                   playsinline
               ></video>
             </template>
+
             <img
                 v-else-if="!hasMedia && safeGem.image"
                 :src="safeGem.image"
@@ -63,7 +79,7 @@
             <button
                 v-if="hasMedia && allMedia.length > 1"
                 @click="prevMedia"
-                class="absolute left-2 top-1/2 -translate-y-1/2 bg-white/70 hover:bg-white rounded-full p-2 shadow"
+                class="absolute left-2 top-1/2 -translate-y-1/2 bg-white/70 hover:bg-white rounded-full p-2 shadow z-10"
             >
               <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -84,7 +100,7 @@
             <button
                 v-if="hasMedia && allMedia.length > 1"
                 @click="nextMedia"
-                class="absolute right-2 top-1/2 -translate-y-1/2 bg-white/70 hover:bg-white rounded-full p-2 shadow"
+                class="absolute right-2 top-1/2 -translate-y-1/2 bg-white/70 hover:bg-white rounded-full p-2 shadow z-10"
             >
               <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -110,7 +126,7 @@
             <div
                 v-for="(media, idx) in allMedia"
                 :key="media.url"
-                class="w-16 h-16 rounded-lg cursor-pointer border-2 bg-gray-200"
+                class="w-16 h-16 rounded-lg cursor-pointer border-2 bg-gray-200 relative"
                 :class="idx === activeIndex ? 'border-emerald-600' : 'border-transparent opacity-80 hover:opacity-100'"
                 @click="activeIndex = idx"
             >
@@ -121,13 +137,22 @@
                   class="w-full h-full object-cover rounded"
               />
               <video
-                  v-else-if="media.type === 'video'"
+                  v-else-if="media.type === 'file'"
                   :src="media.url"
                   :alt="`${safeGem.name} thumb ${idx + 1}`"
                   class="w-full h-full object-cover rounded"
                   muted
                   playsinline
               ></video>
+
+              <div
+                  v-else-if="media.type === 'vimeo' || media.type === 'youtube'"
+                  class="w-full h-full flex items-center justify-center bg-black rounded"
+              >
+                <svg class="w-8 h-8 text-white opacity-70" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+                </svg>
+              </div>
             </div>
           </div>
         </div>
@@ -169,14 +194,70 @@ const route = useRoute();
 const gem = ref<Gem | null>(null);
 const relatedGems = ref<Gem[]>([]);
 
-// ----- NOVÁ LOGIKA KARUSELU -----
+// ----- LOGIKA KARUSELU -----
 
 const activeIndex = ref(0);
 
-// Vytvoříme jedno pole pro všechna média (obrázky i videa)
-const allMedia = computed(() => {
-  const images = (safeGem.value.images || []).map(url => ({ type: 'image' as const, url }));
-  const videos = (safeGem.value.videos || []).map(url => ({ type: 'video' as const, url }));
+// Helper typ
+type MediaItem = {
+  type: 'image' | 'vimeo' | 'youtube' | 'file';
+  url: string;
+  embedUrl?: string;
+};
+
+/**
+ * Převede URL videa na objekt, který umíme zobrazit
+ */
+const parseVideoUrl = (url: string): MediaItem | null => {
+  try {
+    const vimeoRegex = /(?:https?:\/\/)?(?:www\.)?vimeo\.com\/(\d+)/;
+    const youtubeRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/;
+
+    const vimeoMatch = url.match(vimeoRegex);
+    if (vimeoMatch && vimeoMatch[1]) {
+      return {
+        type: 'vimeo',
+        url: url,
+        // Čisté embed URL bez dalších parametrů, autoplay řešíme níže
+        embedUrl: `https://player.vimeo.com/video/${vimeoMatch[1]}?autoplay=1&muted=1&loop=1&title=0&byline=0&portrait=0&background=1`
+      };
+    }
+
+    const youtubeMatch = url.match(youtubeRegex);
+    if (youtubeMatch && youtubeMatch[1]) {
+      return {
+        type: 'youtube',
+        url: url,
+        // Parametry pro čistý autoplay
+        embedUrl: `https://www.youtube.com/embed/${youtubeMatch[1]}?autoplay=1&mute=1&loop=1&playlist=${youtubeMatch[1]}&controls=0&showinfo=0&rel=0&iv_load_policy=3`
+      };
+    }
+
+    // Fallback pro stará data (přímé soubory)
+    if (url.endsWith('.mp4') || url.endsWith('.mov') || url.endsWith('.webm')) {
+      return {
+        type: 'file',
+        url: url
+      };
+    }
+
+  } catch (e) {
+    console.error("Error parsing video URL:", e);
+  }
+  return null; // Neznámý formát
+};
+
+// Vytvoříme jedno pole pro všechna média
+const allMedia = computed((): MediaItem[] => {
+  const images = (safeGem.value.images || []).map(url => ({
+    type: 'image' as const,
+    url: url
+  }));
+
+  const videos = (safeGem.value.videos || [])
+      .map(parseVideoUrl)
+      .filter((item): item is MediaItem => item !== null); // Odstraní neplatné video URL
+
   return [...images, ...videos];
 });
 
@@ -184,12 +265,12 @@ const allMedia = computed(() => {
 const hasMedia = computed(() => allMedia.value.length > 0);
 
 // Aktivní médium, které se má zobrazit
-const activeMediaItem = computed(() => {
+const activeMediaItem = computed((): MediaItem | null => {
   if (!hasMedia.value) return null;
   return allMedia.value[activeIndex.value];
 });
 
-// Funkce pro listování (přejmenováno z Image na Media)
+// Funkce pro listování
 const nextMedia = () => {
   if (!hasMedia.value) return;
   activeIndex.value = (activeIndex.value + 1) % allMedia.value.length;
@@ -235,27 +316,39 @@ watch(
     }
 );
 
-// Bezpečná verze 'gem' pro template, aby nepadal, než se data načtou
-// Důležité: Přidáno 'videos: []'
+// Bezpečná verze 'gem' pro template
 const safeGem = computed<Gem>(() => gem.value || {
   id: "",
   name: "Načítání...",
   description: "",
   image: "",
   images: [],
-  videos: [], // <-- PŘIDÁNO ZDE
+  videos: [],
   price: 0,
   isNew: false,
 });
 </script>
 
 <style scoped>
-/* Přidání poměru stran pro hlavní media kontejner */
+/* Definice poměru stran */
 .aspect-square {
   aspect-ratio: 1 / 1;
 }
 
-img, video {
+img, video, iframe {
   transition: opacity 0.3s ease;
+}
+
+/* Trik pro 'object-cover' u <iframe>
+  - w-[177.77%] je 16/9. Tím vyplníme šířku kontejneru 1:1 na základě jeho výšky.
+*/
+iframe {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 100%;
+  width: 177.77%; /* 16/9 ratio */
+  max-width: none;
 }
 </style>

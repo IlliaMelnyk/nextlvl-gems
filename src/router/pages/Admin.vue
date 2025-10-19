@@ -56,7 +56,8 @@
                 :multiple="true"
                 @success="onUploadSuccess"
                 @error="onUploadError"
-                :validateFile="validateImageFile" :onUploadStart="onUploadStart"
+                :validateFile="validateImageFile"
+                :onUploadStart="onUploadStart"
             />
           </IKContext>
 
@@ -71,20 +72,35 @@
         </div>
 
         <div>
-          <p class="font-medium mb-2">Upload Videos:</p>
-          <IKContext :publicKey="publicKey" :urlEndpoint="urlEndpoint" :authenticator="authenticator">
-            <IKUpload
-                :multiple="true"
-                @success="onVideoUploadSuccess"
-                @error="onUploadError"
-                :validateFile="validateVideoFile" :onUploadStart="onUploadStart"
+          <p class="font-medium mb-2">Add Video URLs (Vimeo or YouTube):</p>
+          <div class="flex gap-2">
+            <input
+                v-model="videoUrlInput"
+                placeholder="https://vimeo.com/123456789"
+                class="border p-2 w-full"
             />
-          </IKContext>
+            <button
+                @click="addVideoUrl"
+                type="button"
+                class="bg-blue-600 text-white px-4 py-2 rounded shrink-0"
+            >
+              Add
+            </button>
+          </div>
 
-          <div class="flex flex-wrap gap-4 mt-3">
-            <div v-for="(videoUrl, idx) in newGem.videos" :key="idx" class="relative">
-              <video :src="videoUrl" class="w-24 h-24 object-cover rounded border" muted></video>
-              <button @click="removeVideo(idx)" type="button" title="Remove video" class="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center font-bold text-sm leading-none">
+          <div class="flex flex-col gap-2 mt-3">
+            <div
+                v-for="(videoUrl, idx) in newGem.videos"
+                :key="idx"
+                class="relative flex justify-between items-center bg-white p-2 border rounded"
+            >
+              <span class="text-sm truncate mr-4">{{ videoUrl }}</span>
+              <button
+                  @click="removeVideo(idx)"
+                  type="button"
+                  title="Remove video URL"
+                  class="bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center font-bold text-sm leading-none shrink-0"
+              >
                 &times;
               </button>
             </div>
@@ -98,7 +114,7 @@
               :class="{ 'opacity-50 cursor-not-allowed': isUploading }"
           >
             <span v-if="isUploading">
-              Nahrávám ({{ uploadInProgressCount }})...
+              Nahrávám obrázky ({{ uploadInProgressCount }})...
             </span>
             <span v-else>
               {{ editingId ? "Update Gem" : "Add Gem" }}
@@ -180,7 +196,7 @@ const user = ref<User | null>(null);
 const gems = ref<Gem[]>([]);
 const editingId = ref<string | null>(null);
 
-// Sledování probíhajících nahrávání
+// Sledování nahrávání (pouze pro obrázky)
 const uploadInProgressCount = ref(0);
 const isUploading = computed(() => uploadInProgressCount.value > 0);
 
@@ -203,32 +219,20 @@ const getInitialGemState = (): Gem => ({
   subcategory: "",
 });
 const newGem = ref<Gem>(getInitialGemState());
+const videoUrlInput = ref(""); // Nový ref pro textové pole videa
 
 watch(() => newGem.value.category, () => {
   newGem.value.subcategory = "";
 });
 
-// --- NOVÉ ROBUSTNÍ VALIDAČNÍ FUNKCE ---
+// Robustní validace pro obrázky
 const validateImageFile = (file: File) => {
   const isImageMime = file.type.startsWith('image/');
-  // Povolíme běžné typy obrázků
   const isImageExt = ['.jpg', '.jpeg', '.png', '.gif', '.webp'].some(ext =>
       file.name.toLowerCase().endsWith(ext)
   );
-  // Pokud je Mime typ v pořádku NEBO přípona v pořádku, povol nahrání
   return isImageMime || isImageExt;
 };
-
-const validateVideoFile = (file: File) => {
-  const isVideoMime = file.type.startsWith('video/');
-  // Povolíme běžné typy videí, včetně .mov
-  const isVideoExt = ['.mp4', '.mov', '.avi', '.webm', '.mkv', '.quicktime'].some(ext =>
-      file.name.toLowerCase().endsWith(ext)
-  );
-  // Pokud je Mime typ v pořádku NEBO přípona v pořádku, povol nahrání
-  return isVideoMime || isVideoExt;
-};
-// --- KONEC NOVÝCH FUNKCÍ ---
 
 
 const removeImage = (indexToRemove: number) => {
@@ -239,12 +243,32 @@ const removeImage = (indexToRemove: number) => {
   }
 };
 
+// --- NOVÁ LOGIKA PRO PŘIDÁNÍ/MAZÁNÍ VIDEO URL ---
+const addVideoUrl = () => {
+  const url = videoUrlInput.value.trim();
+  if (url) {
+    if (!newGem.value.videos) {
+      newGem.value.videos = [];
+    }
+    // Jednoduchá kontrola, zda jde o Vimeo nebo YouTube
+    if (url.includes("vimeo.com") || url.includes("youtube.com") || url.includes("youtu.be")) {
+      newGem.value.videos.push(url);
+      videoUrlInput.value = ""; // Vyčistit pole
+    } else {
+      alert("Please enter a valid Vimeo or YouTube URL.");
+    }
+  }
+};
+
 const removeVideo = (indexToRemove: number) => {
   if (newGem.value.videos) {
     newGem.value.videos.splice(indexToRemove, 1);
   }
 };
+// --- KONEC NOVÉ LOGIKY ---
 
+
+// --- Logika pro nahrávání (už jen pro obrázky) ---
 const onUploadStart = () => {
   uploadInProgressCount.value++;
 };
@@ -264,20 +288,13 @@ const onUploadSuccess = (response: any) => {
   onUploadFinished();
 };
 
-const onVideoUploadSuccess = (response: any) => {
-  console.log("✅ Video upload success:", response);
-  if (!newGem.value.videos) {
-    newGem.value.videos = [];
-  }
-  newGem.value.videos.push(response.url);
-  onUploadFinished();
-};
-
 const onUploadError = (error: any) => {
   console.error("❌ Upload failed:", error);
   alert("Upload failed. Check console for details.");
   onUploadFinished();
 };
+// --- Konec logiky nahrávání ---
+
 
 onAuthStateChanged(auth, (u) => {
   if (u && ADMIN_EMAILS.includes(u.email ?? "")) {
@@ -298,6 +315,7 @@ const fetchGems = async () => {
 };
 
 const saveGem = async () => {
+  // Validace zůstává
   if (!newGem.value.name || (newGem.value.images.length === 0 && newGem.value.videos.length === 0)) {
     alert("Name and at least one image or video are required.");
     return;

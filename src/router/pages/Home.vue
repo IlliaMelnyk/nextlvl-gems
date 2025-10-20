@@ -48,7 +48,7 @@
         <h2 class="text-4xl font-bold text-center mb-12">Contact Us</h2>
         <div class="grid md:grid-cols-2 gap-10">
           <form
-              action="https://formspree.io/f/xldpawoy"
+              action="https://formspree.io/f/xdkwjjyd"
               method="POST"
               class="space-y-6"
           >

@@ -62,8 +62,8 @@
           <div class="space-y-6">
             <p class="text-lg">Have any questions? Reach out to us and we’ll get back to you as soon as possible.</p>
             <div>
-              <p><strong>Email:</strong> gadasp@gmail.com</p>
-              <p><strong>Instagram:</strong> @nextlvlgem@gmail.com</p>
+              <p><strong>Email:</strong> nextlvlgem@gmail.com</p>
+              <p><strong>Instagram:</strong> @nextlevel_gems</p>
             </div>
           </div>
         </div>

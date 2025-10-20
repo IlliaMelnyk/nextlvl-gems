@@ -63,8 +63,7 @@
             <p class="text-lg">Have any questions? Reach out to us and we’ll get back to you as soon as possible.</p>
             <div>
               <p><strong>Email:</strong> gadasp@gmail.com</p>
-              <p><strong>Phone:</strong> +420 736 164 634</p>
-              <p><strong>Instagram:</strong> @nextlevel_gems</p>
+              <p><strong>Instagram:</strong> @nextlvlgem@gmail.com</p>
             </div>
           </div>
         </div>

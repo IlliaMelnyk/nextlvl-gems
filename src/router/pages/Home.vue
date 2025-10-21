@@ -28,10 +28,10 @@
 
     <!-- About -->
     <section id="about" class="scroll-mt-12 bg-gray-100 text-black pt-4">
-      <div class="max-w-6xl mx-auto px-6 grid md:grid-cols-2 gap-12 items-center">
+      <div class="max-w-6xl mx-auto px-6 grid md:grid-cols-2 gap-x-12 items-center">
         <div>
-          <h2 class="text-4xl font-bold mb-6 ">About us</h2>
-          <p class="text-lg leading-relaxed mb-10">
+          <h2 class="text-4xl font-bold mb-6">About us</h2>
+          <p class="text-lg leading-relaxed md:mb-10">
             At Nextlevel Gems, we believe that transparency is the key to building trust with our clients.
             Every gem we provide comes with verified details about its origin, quality, and value.
           </p>

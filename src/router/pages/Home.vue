@@ -66,7 +66,7 @@
               <p><strong>Instagram:</strong> @nextlevel_gems</p>
             </div>
             <div>
-              <p class="font-semibold text-lg">Pavel Gadas</p>
+              <p class="font-semibold text-lg" spellcheck="false">Pavel Gadas</p>
               <p>Brno | Czech Republic</p>
               <p>Business ID: 14414171</p>
             </div>

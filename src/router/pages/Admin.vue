@@ -136,10 +136,44 @@
       </form>
 
       <h2 class="text-xl font-semibold mt-8 mb-3">All Gems</h2>
-      <ul>
-        <li v-for="gem in gems" :key="gem.id" class="flex justify-between items-center p-2 border-b">
-          <span>{{ gem.name }}</span>
-          <div class="flex items-center gap-4">
+
+      <div class="flex flex-col sm:flex-row gap-4 mb-4 p-4 bg-white rounded-md shadow-sm">
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Filter by Category</label>
+          <select v-model="filterCategory" class="mt-1 block w-full sm:w-56 border p-2 rounded-md">
+            <option value="all">All Categories</option>
+            <option v-for="cat in Object.keys(categories)" :key="cat" :value="cat">
+              {{ cat }}
+            </option>
+          </select>
+        </div>
+        <div v-if="filterCategory !== 'all'">
+          <label class="block text-sm font-medium text-gray-700">Filter by Subcategory</label>
+          <select v-model="filterSubcategory" class="mt-1 block w-full sm:w-56 border p-2 rounded-md">
+            <option value="all">All Subcategories</option>
+            <option v-for="subcat in availableFilterSubcategories" :key="subcat" :value="subcat">
+              {{ subcat }}
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <div v-if="gems.length === 0" class="text-gray-500">Loading gems...</div>
+
+      <div v-else-if="filteredGemsList.length === 0" class="text-gray-500 p-4 bg-white rounded-md shadow-sm">
+        No gems found for the selected filter.
+      </div>
+
+      <ul v-else class="space-y-2">
+        <li v-for="gem in filteredGemsList" :key="gem.id" class="flex flex-col sm:flex-row justify-between sm:items-center p-3 border-b bg-white rounded-md shadow-sm">
+          <span class="font-medium text-gray-900 mb-2 sm:mb-0">
+            {{ gem.name }}
+            <span class="text-sm text-gray-500 font-normal ml-2">
+              ({{ gem.category }} / {{ gem.subcategory }})
+            </span>
+          </span>
+
+          <div class="flex items-center gap-4 flex-shrink-0">
             <label class="flex items-center gap-2 cursor-pointer">
               <input
                   type="checkbox"
@@ -150,8 +184,8 @@
               <span class="text-sm">Is New</span>
             </label>
             <div>
-              <button @click="editGem(gem)" class="text-blue-500 mr-2">Edit</button>
-              <button @click="deleteGem(gem.id)" class="text-red-500">Delete</button>
+              <button @click="editGem(gem)" class="text-blue-500 mr-2 hover:underline">Edit</button>
+              <button @click="deleteGem(gem.id)" class="text-red-500 hover:underline">Delete</button>
             </div>
           </div>
         </li>
@@ -179,8 +213,8 @@ const publicKey = import.meta.env.VITE_IMAGEKIT_PUBLIC_KEY;
 const urlEndpoint = import.meta.env.VITE_IMAGEKIT_URL_ENDPOINT;
 
 const categories: Record<string, string[]> = {
-  Faceted: ["Beryl", "Garnet", "Chrysoberyl", "Kornerupine", "Quartz", "Ruby", "Sapphire", "Spinel", "Tanzanite", "Topaz", "Tourmaline"],
-  Rough: ["Beryl", "Garnet", "Chrysoberyl", "Kornerupine", "Quartz", "Ruby", "Sapphire", "Spinel", "Tanzanite", "Topaz", "Tourmaline"]
+  Faceted: ["Beryl", "Garnet", "Chrysoberyl", "Kornerupine", "Quartz", "Ruby", "Peridot", "Sapphire", "Spinel", "Tanzanite", "Topaz", "Tourmaline"],
+  Rough: ["Beryl", "Garnet", "Chrysoberyl", "Kornerupine", "Quartz", "Ruby", "Peridot", "Sapphire", "Spinel", "Tanzanite", "Topaz", "Tourmaline"]
 };
 
 const authenticator = async () => {
@@ -216,6 +250,40 @@ const videoUrlInput = ref("");
 
 watch(() => newGem.value.category, () => {
   newGem.value.subcategory = "";
+});
+
+const filterCategory = ref<string>('all');
+const filterSubcategory = ref<string>('all');
+
+// Computed pro podkategorie ve FILTRU
+const availableFilterSubcategories = computed(() => {
+  if (filterCategory.value && filterCategory.value !== 'all') {
+    return categories[filterCategory.value] || [];
+  }
+  return [];
+});
+
+// Watcher pro resetování filtru podkategorií
+watch(filterCategory, () => {
+  filterSubcategory.value = 'all';
+});
+
+// Computed pro FILTROVANÝ seznam drahokamů
+const filteredGemsList = computed(() => {
+  let list = [...gems.value]; // Začneme se všemi
+
+  // 1. Filtrování podle kategorie
+  if (filterCategory.value !== 'all') {
+    list = list.filter(gem => gem.category === filterCategory.value);
+  }
+
+  // 2. Filtrování podle podkategorie
+  if (filterSubcategory.value !== 'all') {
+    list = list.filter(gem => gem.subcategory === filterSubcategory.value);
+  }
+
+  // 3. Seřadíme filtrovaný seznam podle jména
+  return list.sort((a, b) => a.name.localeCompare(b.name));
 });
 
 const validateFile = (file: File): boolean => {

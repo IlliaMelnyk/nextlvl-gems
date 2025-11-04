@@ -90,8 +90,8 @@ const loading = ref(true);
 
 // Stejná struktura kategorií jako v Navbaru
 const categories: Record<string, string[]> = {
-  Faceted: ["Beryl", "Garnet", "Chrysoberyl", "Kornerupine", "Quartz", "Ruby", "Sapphire", "Spinel", "Tanzanite", "Topaz", "Tourmaline"],
-  Rough: ["Beryl", "Garnet", "Chrysoberyl", "Kornerupine", "Quartz", "Ruby", "Sapphire", "Spinel", "Tanzanite", "Topaz", "Tourmaline"]
+  Faceted: ["Beryl", "Garnet", "Chrysoberyl", "Kornerupine", "Quartz", "Ruby", "Peridot", "Sapphire", "Spinel", "Tanzanite", "Topaz", "Tourmaline"],
+  Rough: ["Beryl", "Garnet", "Chrysoberyl", "Kornerupine", "Quartz", "Ruby", "Peridot", "Sapphire", "Spinel", "Tanzanite", "Topaz", "Tourmaline"]
 };
 
 // Stav pro ovládání dropdownu

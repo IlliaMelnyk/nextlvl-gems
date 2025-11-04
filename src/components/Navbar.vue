@@ -167,8 +167,8 @@ const route = useRoute();
 const openSubCategory = ref('');
 
 const categories: Record<string, string[]> = {
-  Faceted: ["Beryl", "Garnet", "Chrysoberyl", "Kornerupine", "Quartz", "Ruby", "Sapphire", "Spinel", "Tanzanite", "Topaz", "Tourmaline"],
-  Rough: ["Beryl", "Garnet", "Chrysoberyl", "Kornerupine", "Quartz", "Ruby", "Sapphire", "Spinel", "Tanzanite", "Topaz", "Tourmaline"]
+  Faceted: ["Beryl", "Garnet", "Chrysoberyl", "Kornerupine", "Quartz", "Ruby", "Peridot", "Sapphire", "Spinel", "Tanzanite", "Topaz", "Tourmaline"],
+  Rough: ["Beryl", "Garnet", "Chrysoberyl", "Kornerupine", "Quartz", "Ruby", "Peridot", "Sapphire", "Spinel", "Tanzanite", "Topaz", "Tourmaline"]
 };
 
 const toggleSubCategory = (category: string) => {

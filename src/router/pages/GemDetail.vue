@@ -128,7 +128,67 @@
         </div>
       </div>
 
-      <div v-if="relatedGems.length > 0" class="mt-20">
+      <div class="text-center mt-8">
+        <button
+            @click="isModalOpen = true"
+            class="bg-emerald-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-emerald-700 transition"
+        >
+          Request Price
+        </button>
+      </div>
+
+      <div v-if="isModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4" aria-modal="true" role="dialog">
+        <div class="fixed inset-0 bg-black/60" @click="isModalOpen = false"></div>
+
+        <div class="relative z-10 bg-white text-black rounded-lg shadow-xl w-full max-w-[150vh] flex flex-col max-h-[90vh]">
+
+          <div class="flex-shrink-0 p-6 pb-4 border-b border-gray-200">
+            <div class="flex justify-between items-start">
+              <h2 class="text-2xl font-bold">Request Price</h2>
+              <button
+                  @click="isModalOpen = false"
+                  class="text-gray-400 hover:text-gray-700 ml-4 flex-shrink-0"
+                  aria-label="Close modal"
+              >
+                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <p class="text-gray-700 mt-4">
+              You are requesting the price for: <strong>{{ safeGem.name }}</strong>
+            </p>
+          </div>
+
+          <div class="flex-grow overflow-y-auto p-6">
+            <form
+                action="https://formspree.io/f/xdkwjjyd"
+                method="POST"
+                class="space-y-3"
+            >
+              <input type="hidden" name="price_request_for_gem" :value="safeGem.name">
+              <input type="hidden" name="_subject" :value="`Price Request: ${safeGem.name}`">
+
+              <div>
+                <label for="request_name" class="block text-sm font-medium text-gray-700 text-left">Your Name</label>
+                <input id="request_name" type="text" name="name" placeholder="Your Name" class="w-full border rounded-lg px-4 py-2 mt-1" required />
+              </div>
+              <div>
+                <label for="request_email" class="block text-sm font-medium text-gray-700 text-left">Your Email</label>
+                <input id="request_email" type="email" name="email" placeholder="you@example.com" class="w-full border rounded-lg px-4 py-2 mt-1" required />
+              </div>
+              <div>
+                <label for="request_message" class="block text-sm font-medium text-gray-700 text-left">Additional Message (Optional)</label>
+                <textarea id="request_message" name="message" rows="2" placeholder="Any specific questions...?" class="w-full border rounded-lg px-4 py-2 mt-1"></textarea>
+              </div>
+
+              <button type="submit" class="bg-emerald-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-emerald-700 transition w-full">
+                Send Request
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="relatedGems.length > 0" class="mt-14">
         <h2 class="text-2xl font-bold text-center mb-8">Related Products</h2>
         <div class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-3 gap-6">
           <GemCard v-for="related in relatedGems" :key="related.id" :gem="related" />
@@ -149,6 +209,7 @@ const route = useRoute();
 const gem = ref<Gem | null>(null);
 const relatedGems = ref<Gem[]>([]);
 const activeIndex = ref(0);
+const isModalOpen = ref(false);
 
 type MediaItem = {
   type: 'image' | 'vimeo' | 'youtube' | 'file';
@@ -256,6 +317,7 @@ const prevMedia = () => {
 const loadGem = async (id: string) => {
   gem.value = null;
   activeIndex.value = 0;
+  isModalOpen.value = false;
   try {
     const data = await fetchGemById(id);
     if (!data) throw new Error("Gem not found!");
@@ -292,6 +354,14 @@ watch(
     { immediate: true }
 );
 
+watch(isModalOpen, (isOpen) => {
+  if (isOpen) {
+    document.body.style.overflow = 'hidden';
+  } else {
+    document.body.style.overflow = '';
+  }
+});
+
 const safeGem = computed<Gem>(() => gem.value || {
   id: "", name: "Loading...", description: "", price: 0,
   image: "", images: [], videos: [], isNew: false, category: "", subcategory: "",
@@ -302,5 +372,15 @@ const safeGem = computed<Gem>(() => gem.value || {
 <style scoped>
 .aspect-square {
   aspect-ratio: 1 / 1;
+}
+
+iframe {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 100%;
+  width: 177.77%; /* 16/9 ratio */
+  max-width: none;
 }
 </style>

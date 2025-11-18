@@ -140,7 +140,7 @@
       <div v-if="isModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4" aria-modal="true" role="dialog">
         <div class="fixed inset-0 bg-black/60" @click="isModalOpen = false"></div>
 
-        <div class="relative z-10 bg-white text-black rounded-lg shadow-xl w-full max-w-[150vh] flex flex-col max-h-[90vh]">
+        <div class="relative z-10 bg-white text-black rounded-lg shadow-xl w-full max-w-[130vh] flex flex-col max-h-[90vh]">
 
           <div class="flex-shrink-0 p-6 pb-4 border-b border-gray-200">
             <div class="flex justify-between items-start">
@@ -159,9 +159,9 @@
           </div>
 
           <div class="flex-grow overflow-y-auto p-6">
+
             <form
-                action="https://formspree.io/f/xdkwjjyd"
-                method="POST"
+                @submit.prevent="handlePriceRequest"
                 class="space-y-3"
             >
               <input type="hidden" name="price_request_for_gem" :value="safeGem.name">
@@ -180,8 +180,13 @@
                 <textarea id="request_message" name="message" rows="2" placeholder="Any specific questions...?" class="w-full border rounded-lg px-4 py-2 mt-1"></textarea>
               </div>
 
-              <button type="submit" class="bg-emerald-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-emerald-700 transition w-full">
-                Send Request
+              <button
+                  type="submit"
+                  class="bg-emerald-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-emerald-700 transition w-full"
+                  :disabled="isSubmitting"
+                  :class="{ 'opacity-70 cursor-not-allowed': isSubmitting }"
+              >
+                {{ isSubmitting ? 'Sending...' : 'Send Request' }}
               </button>
             </form>
           </div>
@@ -210,6 +215,39 @@ const gem = ref<Gem | null>(null);
 const relatedGems = ref<Gem[]>([]);
 const activeIndex = ref(0);
 const isModalOpen = ref(false);
+const isSubmitting = ref(false); // <-- NOVÝ STAV PRO ODESÍLÁNÍ
+
+// ===== NOVÁ FUNKCE PRO ODESLÁNÍ FORMULÁŘE =====
+const handlePriceRequest = async (event: Event) => {
+  isSubmitting.value = true;
+  const form = event.target as HTMLFormElement;
+  const formData = new FormData(form);
+
+  try {
+    const response = await fetch("https://formspree.io/f/mqanakpg", {
+      method: "POST",
+      body: formData,
+      headers: {
+        'Accept': 'application/json'
+      }
+    });
+
+    if (response.ok) {
+      alert("Your price request has been sent successfully!");
+      isModalOpen.value = false; // Zavřít modál
+    } else {
+      // Pokud Formspree vrátí chybu (např. špatná konfigurace)
+      throw new Error("Form submission failed");
+    }
+  } catch (error) {
+    console.error("Error submitting Formspree:", error);
+    alert("An error occurred while sending your request. Please try again later.");
+  } finally {
+    isSubmitting.value = false; // Vždy odblokovat tlačítko
+  }
+};
+// ===== KONEC NOVÉ FUNKCE =====
+
 
 type MediaItem = {
   type: 'image' | 'vimeo' | 'youtube' | 'file';

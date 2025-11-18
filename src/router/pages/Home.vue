@@ -3,20 +3,16 @@
     <Navbar />
 
     <section id="home" class="relative pt-[80px] min-h-[450px] overflow-hidden">
-      <!-- Obrázek na pozadí -->
       <div class="absolute inset-0 bg-cover bg-center scale-100" :style="`background-image: url('${heroImage}')`" aria-hidden="true" ></div>
 
-      <!-- Tmavý překryv pro lepší kontrast -->
       <div class="absolute inset-0 bg-black/30"></div>
 
-      <!-- Obsah -->
       <div class="relative z-10 max-w-5xl mx-2 px-6 pt-24 pb-16 flex flex-col items-start text-left">
         <h1 class="text-4xl md:text-6xl font-extrabold leading-tight"> Transparency<br/>is the key</h1>
         <router-link to="/products" class="mt-4 inline-block px-6 py-3 rounded-full font-semibold shadow-green-500 bg-emerald-700 text-black hover:bg-amber-500 transition" > View products </router-link>
       </div>
 
     </section>
-    <!-- New Gems -->
     <section id="new-gems" class="scroll-mt-10 bg-gray-100 text-black pt-10">
       <div class="max-w-6xl mx-auto px-6">
         <h2 class="text-3xl font-bold mb-8 text-center ">New Gems</h2>
@@ -26,12 +22,11 @@
       </div>
     </section>
 
-    <!-- About -->
     <section id="about" class="scroll-mt-12 bg-gray-100 text-black pt-4">
-      <div class="max-w-6xl mx-auto px-6 grid md:grid-cols-2 gap-x-12 items-center">
+      <div class="max-w-6xl mx-auto px-6 grid md:grid-cols-2 gap-x-12 gap-y-6 items-center">
         <div>
           <h2 class="text-4xl font-bold mb-6">About us</h2>
-          <p class="text-lg leading-relaxed md:mb-10">
+          <p class="text-lg leading-relaxed mb-6 md:mb-10">
             At Nextlevel Gems, we believe that transparency is the key to building trust with our clients.
             Every gem we provide comes with verified details about its origin, quality, and value.
           </p>
@@ -42,21 +37,43 @@
       </div>
     </section>
 
-    <!-- Contact -->
     <section id="contact" class="scroll-mt-24 bg-gray-100 text-black pb-20">
       <div class="max-w-6xl mx-auto px-6">
         <h2 class="text-4xl font-bold text-center mb-12">Contact Us</h2>
         <div class="grid md:grid-cols-2 gap-10">
-          <form
-              action="https://formspree.io/f/xdkwjjyd"
-              method="POST"
-              class="space-y-6"
-          >
-            <input type="text" name="name" placeholder="Your Name" class="w-full border rounded-lg px-4 py-2" required />
-            <input type="email" name="email" placeholder="you@example.com" class="w-full border rounded-lg px-4 py-2" required />
-            <textarea name="message" rows="5" placeholder="Write your message..." class="w-full border rounded-lg px-4 py-2" required></textarea>
-            <button type="submit" class="bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition">
-              Send Message
+
+          <form @submit.prevent="handleContactSubmit" class="space-y-6">
+            <input
+                v-model="contactForm.name"
+                type="text"
+                name="name"
+                placeholder="Your Name"
+                class="w-full border rounded-lg px-4 py-2"
+                required
+            />
+            <input
+                v-model="contactForm.email"
+                type="email"
+                name="email"
+                placeholder="you@example.com"
+                class="w-full border rounded-lg px-4 py-2"
+                required
+            />
+            <textarea
+                v-model="contactForm.message"
+                name="message"
+                rows="5"
+                placeholder="Write your message..."
+                class="w-full border rounded-lg px-4 py-2"
+                required
+            ></textarea>
+
+            <button
+                type="submit"
+                class="bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                :disabled="isSending"
+            >
+              {{ isSending ? 'Sending...' : 'Send Message' }}
             </button>
           </form>
           <div class="space-y-6">
@@ -85,10 +102,41 @@ import { fetchGems } from "../../gem.ts";
 import { ref, onMounted, computed } from "vue";
 
 const allGems = ref<Gem[]>([]);
-
-// ZDE JE ZMĚNA: Zobrazí se pouze první 3 nové drahokamy
 const newGems = computed(() => allGems.value.filter(g => g.isNew).slice(0, 3));
 const heroImage = "/emerald-hero2.jpg";
+
+const isSending = ref(false);
+const contactForm = ref({
+  name: "",
+  email: "",
+  message: ""
+});
+
+const handleContactSubmit = async () => {
+  isSending.value = true;
+  try {
+    const response = await fetch("https://formspree.io/f/mqanakpg", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      },
+      body: JSON.stringify(contactForm.value),
+    });
+
+    if (response.ok) {
+      alert("Message sent successfully!");
+      contactForm.value = { name: "", email: "", message: "" };
+    } else {
+      alert("Failed to send message. Please try again.");
+    }
+  } catch (error) {
+    console.error("Error sending message:", error);
+    alert("An error occurred. Please try again.");
+  } finally {
+    isSending.value = false;
+  }
+};
 onMounted(async () => {
   try {
     const data = await fetchGems();
@@ -98,4 +146,3 @@ onMounted(async () => {
   }
 });
 </script>
-
